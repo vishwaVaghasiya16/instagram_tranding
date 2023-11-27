@@ -24,8 +24,15 @@ route.post(
   controller.upload
 );
 
+/**get last chunk(for resume upload large file) */
+route.get("/upload/:fileId/last-chunk", controller.lastUploadedChunk);
+
 /**read file in chunk */
 route.get("/readFile/:fileName", controller.readFile);
+
+route.post("/resume/:fileId", async (req, res) => {
+  controller.resumeFileUpload;
+});
 
 /**get all posts */
 route.get("/:id?", controller.getAllPost);

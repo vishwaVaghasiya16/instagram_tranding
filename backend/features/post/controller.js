@@ -13,6 +13,9 @@ import {
   readLargeFile,
 } from "./chunkupload.helper.js";
 
+/**track last uploaded chunks */
+const uploadedChunks = {};
+
 class controller {
   /**create post */
   static createPost = async (req, res) => {
@@ -90,6 +93,78 @@ class controller {
     } catch (error) {
       console.log(error);
       return errorResponse({ res, error });
+    }
+  };
+
+  /**get last uploaded chunk */
+  static lastUploadedChunk = async (req, res) => {
+    try {
+      const { fileId } = req.params;
+      const lastUploadedChunk = uploadedChunks[fileId];
+
+      return successResponse({
+        res,
+        message: "Last uploaded chunk information retrieved successfully.",
+        data: {
+          fileId,
+          lastUploadedChunk,
+        },
+      });
+    } catch (error) {
+      return errorResponse({
+        res,
+        error,
+        message: "Error retrieving last uploaded chunk information.",
+      });
+    }
+  };
+
+  // Import necessary modules
+
+  /**(Method : 2) Resume file upload */
+  static resumeFileUpload = async (req, res) => {
+    try {
+      const { fileId } = req.params;
+      const { fileName, totalChunks } = req.body;
+
+      const fileExt = fileName.split(".").pop();
+      const tempchunkDir = `${uploadsDirectory}/chunks`;
+
+      if (!fs.existsSync(tempchunkDir)) {
+        return res
+          .status(400)
+          .json({ error: "No chunks found for resuming upload" });
+      }
+
+      const bufferArray = await Promise.all(
+        Array.from({ length: totalChunks }, (_, i) => {
+          const chunkFilePath = `${tempchunkDir}/${fileId}_part_${i + 1
+            }.${fileExt}`;
+          return fs.promises.readFile(chunkFilePath);
+        })
+      );
+
+      const outputFileName = `${fileId}.${fileExt}`;
+      const writeStream = fs.createWriteStream(
+        `${uploadsDirectory}/${outputFileName}`,
+        {
+          flags: "a", // append mode
+        }
+      );
+
+      bufferArray.forEach((chunkBuffer, i) => {
+        const chunkFilePath = `${tempchunkDir}/${fileId}_part_${i + 1
+          }.${fileExt}`;
+        fs.unlinkSync(chunkFilePath);
+        writeStream.write(chunkBuffer);
+      });
+
+      writeStream.end();
+
+      return res.json(successResponse("File upload resumed successfully"));
+    } catch (error) {
+      console.error("[ERROR]:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 

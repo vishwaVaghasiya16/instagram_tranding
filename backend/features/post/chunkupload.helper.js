@@ -7,6 +7,105 @@ const ongoingUploads = {};
 const uploadedChunks = {};
 
 /**(Method : 1) Append chunk in file */
+// export const appendChunkInFile = async (req) => {
+//   try {
+//     // destructure required keys
+//     const { fileId } = req.params;
+//     const { buffer } = req.file;
+//     const { fileName, totalChunks, currentChunk, isLastChunk } = req.body;
+//     const chunk = req.file.buffer;
+
+//     if (ongoingUploads[fileId]) {
+//       // Stop the ongoing upload
+//       ongoingUploads[fileId].destroy();
+//       delete ongoingUploads[fileId];
+//     }
+
+//     // upload percentage
+//     const percentage = Math.floor((currentChunk / totalChunks) * 100);
+//     console.log(percentage + "%");
+
+//     // get file extension from filename
+//     const fileExt = fileName.split(".").pop();
+
+//     const tempchunkDir = `${uploadsDirectory}/chunks`;
+
+//     // create dir if not exist
+//     if (!fs.existsSync(uploadsDirectory)) fs.mkdirSync(uploadsDirectory);
+
+//     // create chunks directory if not exist
+//     if (!fs.existsSync(tempchunkDir)) {
+//       fs.mkdirSync(tempchunkDir);
+//     }
+
+//     const chunkFileName = `${fileId}_part_${currentChunk}.${fileExt}`;
+//     await fs.promises.writeFile(`${tempchunkDir}/${chunkFileName}`, chunk);
+
+//     if (Number(currentChunk) === Number(isLastChunk)) {
+//       // create dir if not exist
+//       if (!fs.existsSync(uploadsDirectory)) fs.mkdirSync(uploadsDirectory);
+
+//       // output filename
+//       const fileName = `${req.params.fileId}.${fileExt}`;
+
+//       /**create writeable stream */
+//       const writeStream = fs.createWriteStream(
+//         `${uploadsDirectory}/${fileName}`
+//       );
+
+//       const bufferArray = [];
+//       for (let i = 1; i <= currentChunk; i++) {
+//         const chunkFilePath = `${tempchunkDir}/${fileId}_part_${i}.${fileExt}`;
+
+//         const chunkBuffer = await fs.promises.readFile(chunkFilePath);
+//         bufferArray.push(chunkBuffer);
+
+//         fs.unlinkSync(chunkFilePath);
+//       }
+
+//       const buffer = Buffer.concat(bufferArray);
+//       writeStream.write(buffer);
+//     }
+
+//     // output filename
+//     const outputFileName = `${fileId}.${fileExt}`;
+
+//     // create a write stream for the file
+//     const fileStream = fs.createWriteStream(
+//       `${uploadsDirectory}/${outputFileName}`,
+//       {
+//         flags: "a", // append mode
+//       }
+//     );
+
+//     // store the write stream in ongoingUploads
+//     ongoingUploads[fileId] = fileStream;
+
+//     // compare the current chunk and chunk with last upload chunk
+//     if (currentChunk === uploadedChunks[fileId]) {
+//       console.log("Resuming upload from chunk", currentChunk);
+//     } else {
+//       console.log("Starting upload from chunk", currentChunk);
+//     }
+
+//     // write the buffer to the file
+//     fileStream.write(buffer);
+
+//     // Track the uploaded chunk
+//     uploadedChunks[fileId] = currentChunk;
+
+//     // when it's the last chunk, close the file stream
+//     if (isLastChunk) {
+//       fileStream.end();
+//       console.log("File uploading successfully.");
+//       delete ongoingUploads[fileId];
+//       delete uploadedChunks[fileId];
+//     }
+//   } catch (error) {
+//     console.log(`[ERROR]:`, error);
+//   }
+// };
+
 export const appendChunkInFile = async (req) => {
   try {
     // destructure required keys
@@ -20,7 +119,7 @@ export const appendChunkInFile = async (req) => {
       delete ongoingUploads[fileId];
     }
 
-    /**upload percentage */
+    // upload percentage
     const percentage = Math.floor((currentChunk / totalChunks) * 100);
     console.log(percentage + "%");
 
@@ -44,7 +143,7 @@ export const appendChunkInFile = async (req) => {
     // store the write stream in ongoingUploads
     ongoingUploads[fileId] = fileStream;
 
-    /**compare the current chunk and chunk with last upload chunk */
+    // compare the current chunk and chunk with last upload chunk
     if (currentChunk === uploadedChunks[fileId]) {
       console.log("Resuming upload from chunk", currentChunk);
     } else {
@@ -57,7 +156,7 @@ export const appendChunkInFile = async (req) => {
     // Track the uploaded chunk
     uploadedChunks[fileId] = currentChunk;
 
-    /**when it's the last chunk, close the file stream */
+    // when it's the last chunk, close the file stream
     if (isLastChunk) {
       fileStream.end();
       console.log("File uploading successfully.");
@@ -68,12 +167,6 @@ export const appendChunkInFile = async (req) => {
     console.log(`[ERROR]:`, error);
   }
 };
-
-// // create file in path
-// await fs.promises.appendFile(
-//   `${uploadsDirectory}/${outputFileName}`,
-//   buffer
-// );
 
 /**(Method : 2) Read all chunks and create file */
 export const readAllChunkAndCreateFile = async (req) => {
@@ -112,6 +205,7 @@ export const readAllChunkAndCreateFile = async (req) => {
       const writeStream = fs.createWriteStream(
         `${uploadsDirectory}/${fileName}`
       );
+
       const bufferArray = [];
       for (let i = 1; i <= totalChunks; i++) {
         const chunkFilePath = `${tempchunkDir}/${fileId}_part_${i}.${fileExt}`;
