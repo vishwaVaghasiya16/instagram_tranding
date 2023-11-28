@@ -16,10 +16,17 @@ const Main = () => {
 
     try {
       // Get uploaded URL from the server
+
+      const token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTVhZTQ4ZWI0NGIwOTIyNzdhZmQ2ZDIiLCJpYXQiOjE3MDA0NTU1OTAsImV4cCI6MTcwMTMxOTU5MH0.fZR-8pkvwAa2YkXij7rWb5M8rEe9QfHNfz3WVgrIupQ";
+
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
       const response = await axios.get(
-        "http://localhost:8000/api/post/uploadUrl"
+        `http://localhost:8000/api/post/uploadUrl?fileName=${file.name}`
       );
 
+      console.log(token);
       const { url } = response.data.data;
       const chunkSize = 1024 * 1024;
       const chunks = [];

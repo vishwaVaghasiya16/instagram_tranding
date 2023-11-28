@@ -15,6 +15,18 @@ import {
 
 /**track last uploaded chunks */
 const uploadedChunks = {};
+const fileId = {};
+const fileName = {};
+const totalChunks = {};
+
+const uploading = {
+  "655ae48eb44b092277afd6d2": {
+    fileId,
+    fileName,
+    totalChunks,
+    uploadedChunks,
+  },
+};
 
 class controller {
   /**create post */
@@ -53,14 +65,35 @@ class controller {
   static getUploadUrl = async (req, res) => {
     try {
       const fileId = uuidv4();
-      const url = `${BASE_URL}/api/post/upload/${fileId}`;
+      const userId = req.user._id;
+      const fileName = req.query.fileName;
+      const requestedFileId = req.params.fileId;
 
+      // check if the file already exist or not
+      if (uploadedChunks[requestedFileId]) {
+        return successResponse({
+          res,
+          statusCode: 200,
+          data: {
+            fileId: requestedFileId,
+            uploadedChunks: uploadedChunks[requestedFileId],
+          },
+          message:
+            "File already exists. Returning uploaded chunks information.",
+        });
+      }
+
+      fileId[requestedFileId] = fileId;
+      uploadedChunks[fileId] = [];
+
+      const url = `${BASE_URL}/api/post/upload/${fileId}`;
       return successResponse({
         res,
         statusCode: 200,
-        data: { fileId, url },
+        data: { fileId, url, fileName },
         message: "URL generated successfully.",
       });
+      
     } catch (error) {
       return errorResponse({ res, error });
     }
@@ -116,55 +149,6 @@ class controller {
         error,
         message: "Error retrieving last uploaded chunk information.",
       });
-    }
-  };
-
-  // Import necessary modules
-
-  /**(Method : 2) Resume file upload */
-  static resumeFileUpload = async (req, res) => {
-    try {
-      const { fileId } = req.params;
-      const { fileName, totalChunks } = req.body;
-
-      const fileExt = fileName.split(".").pop();
-      const tempchunkDir = `${uploadsDirectory}/chunks`;
-
-      if (!fs.existsSync(tempchunkDir)) {
-        return res
-          .status(400)
-          .json({ error: "No chunks found for resuming upload" });
-      }
-
-      const bufferArray = await Promise.all(
-        Array.from({ length: totalChunks }, (_, i) => {
-          const chunkFilePath = `${tempchunkDir}/${fileId}_part_${i + 1
-            }.${fileExt}`;
-          return fs.promises.readFile(chunkFilePath);
-        })
-      );
-
-      const outputFileName = `${fileId}.${fileExt}`;
-      const writeStream = fs.createWriteStream(
-        `${uploadsDirectory}/${outputFileName}`,
-        {
-          flags: "a", // append mode
-        }
-      );
-
-      bufferArray.forEach((chunkBuffer, i) => {
-        const chunkFilePath = `${tempchunkDir}/${fileId}_part_${i + 1
-          }.${fileExt}`;
-        fs.unlinkSync(chunkFilePath);
-        writeStream.write(chunkBuffer);
-      });
-
-      writeStream.end();
-
-      return res.json(successResponse("File upload resumed successfully"));
-    } catch (error) {
-      console.error("[ERROR]:", error);
-      return res.status(500).json({ error: "Internal server error" });
     }
   };
 

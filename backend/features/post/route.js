@@ -14,7 +14,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 /**get upload url */
-route.get("/uploadUrl", controller.getUploadUrl);
+route.get("/uploadUrl?fileName", verifyToken, controller.getUploadUrl);
 
 /**write file upload */
 route.post(
@@ -29,10 +29,6 @@ route.get("/upload/:fileId/last-chunk", controller.lastUploadedChunk);
 
 /**read file in chunk */
 route.get("/readFile/:fileName", controller.readFile);
-
-route.post("/resume/:fileId", async (req, res) => {
-  controller.resumeFileUpload;
-});
 
 /**get all posts */
 route.get("/:id?", controller.getAllPost);
