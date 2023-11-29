@@ -26,7 +26,9 @@ const Main = () => {
         `http://localhost:8000/api/post/uploadUrl?fileName=${file.name}`
       );
 
-      console.log(token);
+      console.log(response);
+
+      console.log(response.status);
       const { url } = response.data.data;
       const chunkSize = 1024 * 1024;
       const chunks = [];
