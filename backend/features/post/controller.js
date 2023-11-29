@@ -15,18 +15,7 @@ import {
 
 /**track last uploaded chunks */
 const uploadedChunks = {};
-const fileId = {};
-const fileName = {};
-const totalChunks = {};
-
-const uploading = {
-  "655ae48eb44b092277afd6d2": {
-    fileId,
-    fileName,
-    totalChunks,
-    uploadedChunks,
-  },
-};
+const uploading = {};
 
 class controller {
   /**create post */
@@ -64,36 +53,45 @@ class controller {
   /**get upload url */
   static getUploadUrl = async (req, res) => {
     try {
-      const fileId = uuidv4();
       const userId = req.user._id;
       const fileName = req.query.fileName;
-      const requestedFileId = req.params.fileId;
+      const fileId = req.params.fileId;
 
-      // check if the file already exist or not
-      if (uploadedChunks[requestedFileId]) {
-        return successResponse({
-          res,
-          statusCode: 200,
-          data: {
-            fileId: requestedFileId,
-            uploadedChunks: uploadedChunks[requestedFileId],
-          },
-          message:
-            "File already exists. Returning uploaded chunks information.",
-        });
+      let uploadInfo = uploading[fileId];
+
+      if (!uploadInfo) {
+        const existingFileId = Object.keys(uploading).find(
+          (key) => uploading[key].fileName === fileName
+        );
+
+        if (existingFileId) {
+          uploadInfo = uploading[existingFileId];
+        } else {
+          const newFileId = uuidv4();
+          uploadInfo = {
+            fileId: newFileId,
+            fileName,
+            totalChunks: 0,
+            uploadedChunks,
+          };
+          uploading[newFileId] = uploadInfo;
+        }
       }
 
-      fileId[requestedFileId] = fileId;
-      uploadedChunks[fileId] = [];
+      const url = `${BASE_URL}/api/post/upload/${uploadInfo.fileId}`;
+      console.log(url);
 
-      const url = `${BASE_URL}/api/post/upload/${fileId}`;
       return successResponse({
         res,
         statusCode: 200,
-        data: { fileId, url, fileName },
+        data: {
+          fileId: uploadInfo.fileId,
+          fileName,
+          url,
+          userId,
+        },
         message: "URL generated successfully.",
       });
-      
     } catch (error) {
       return errorResponse({ res, error });
     }
@@ -119,6 +117,40 @@ class controller {
     }
   };
 
+  /**resume chunk uploading */
+  static resumeUpload = async (req, res) => {
+    try {
+      const fileId = req.params.fileId;
+
+      let uploadInfo = uploading[fileId];
+
+      if (!uploadInfo) {
+        return errorResponse({
+          res,
+          statusCode: 400,
+          message: "Upload information not found for the specified file ID.",
+        });
+      }
+
+      const url = `${BASE_URL}/api/post/upload/${uploadInfo.fileId}`;
+      console.log(url);
+
+      return successResponse({
+        res,
+        statusCode: 200,
+        data: {
+          fileId: uploadInfo.fileId,
+          fileName: uploadInfo.fileName,
+          url,
+          userId: uploadInfo.userId,
+        },
+        message: "Upload resumed successfully.",
+      });
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
+
   /**read file */
   static readFile = async (req, res) => {
     try {
@@ -126,29 +158,6 @@ class controller {
     } catch (error) {
       console.log(error);
       return errorResponse({ res, error });
-    }
-  };
-
-  /**get last uploaded chunk */
-  static lastUploadedChunk = async (req, res) => {
-    try {
-      const { fileId } = req.params;
-      const lastUploadedChunk = uploadedChunks[fileId];
-
-      return successResponse({
-        res,
-        message: "Last uploaded chunk information retrieved successfully.",
-        data: {
-          fileId,
-          lastUploadedChunk,
-        },
-      });
-    } catch (error) {
-      return errorResponse({
-        res,
-        error,
-        message: "Error retrieving last uploaded chunk information.",
-      });
     }
   };
 
