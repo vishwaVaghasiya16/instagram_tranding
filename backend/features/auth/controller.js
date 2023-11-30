@@ -136,37 +136,30 @@ class controller {
 
   /**get all users */
   static getAllUsers = async (req, res) => {
+    const { id } = req.params;
+    const { userName } = req.query;
     try {
-      const { id } = req.params;
+      // Method 1 - for standerd use while need to add multipal conditions
+      // let result;
+      // let filter = {};
+      // if (title) filter.title = { $regex: title, $options: "i" }
+      // if (id) {
+      //     result = await feedbacklistModel.findOne(id)
+      // } else {
+      //     result = await feedbacklistModel.find(filter)
+      // }
+
+      // Method 2 - for small querys
       let filter = {};
       if (id) filter._id = id;
-
-      const getUserId = await authModel.find(filter);
-
-      const { userName } = req.body;
-
-      const getUser = await authModel.findOne({ userName });
-
-      // Check if any user are not found
-      if (
-        !getUserId ||
-        getUserId.length === 0 ||
-        !getUser ||
-        getUser.length === 0
-      ) {
-        return successResponse({
-          res,
-          statusCode: 404,
-          data: null,
-          message: "No results found.",
-        });
-      }
+      if (title) filter.userName = { $regex: userName, $options: "i" };
+      const result = await feedbacklistModel.find(userName);
 
       return successResponse({
         res,
         statusCode: 200,
-        data: getUser,
-        message: "User list retrieved successfully!",
+        data: result,
+        message: "feedback list retrived successfully.",
       });
     } catch (error) {
       return errorResponse({ res, error });
@@ -176,9 +169,11 @@ class controller {
   /**update user */
   static updateUser = async (req, res) => {
     try {
-      const update = await authModel.findByIdAndUpdate(req.params.id, {
-        $set: req.body,
-      });
+      const update = await authModel.findByIdAndUpdate(
+        req.params.id,
+        { $set: req.body },
+        { new: true }
+      );
 
       return successResponse({
         res,
@@ -194,12 +189,11 @@ class controller {
   /**delete user */
   static deleteUser = async (req, res) => {
     try {
-      const deleteData = await authModel.findByIdAndDelete(req.params.id);
+      await authModel.findByIdAndDelete(req.params.id);
 
       return successResponse({
         res,
         statusCode: 200,
-        data: deleteData,
         message: "User deleted successfully!",
       });
     } catch (error) {

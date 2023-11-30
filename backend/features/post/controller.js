@@ -3,7 +3,7 @@ import { errorResponse, successResponse } from "../../helper/apiResponse.js";
 import { deleteFile, handleFile } from "../../helper/buffer.js";
 import fs from "fs";
 import path from "path";
-import { isExist } from "../../helper/common.js";
+import { isExist } from "../../helper/isExist.js";
 import { v4 as uuidv4 } from "uuid";
 import { BASE_URL } from "../../config/env.js";
 
@@ -68,12 +68,13 @@ class controller {
           uploadInfo = uploading[existingFileId];
         } else {
           const newFileId = uuidv4();
+
           uploadInfo = {
             fileId: newFileId,
             fileName,
-            totalChunks: 0,
             uploadedChunks,
           };
+
           uploading[newFileId] = uploadInfo;
         }
       }
@@ -101,10 +102,10 @@ class controller {
   static upload = async (req, res) => {
     try {
       // Method 1
-      await appendChunkInFile(req);
+      // await appendChunkInFile(req);
 
       // Method 2
-      // await readAllChunkAndCreateFile(req);
+      await readAllChunkAndCreateFile(req);
 
       successResponse({
         res,

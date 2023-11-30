@@ -57,12 +57,11 @@ class controller {
   /**delete reply comment */
   static delete = async (req, res) => {
     try {
-      const result = await replyCommentModel.findByIdAndDelete(req.params.id);
+      await replyCommentModel.findByIdAndDelete(req.params.id);
 
       return successResponse({
         res,
         statusCode: 200,
-        data: result,
         message: "comment deleted!",
       });
     } catch (error) {

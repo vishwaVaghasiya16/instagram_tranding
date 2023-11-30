@@ -1,260 +1,33 @@
-// import React, { useCallback, useState } from "react";
-// import axios from "axios";
+import React, { useRef, useState } from "react";
+import axios from "axios";
 
-// const Main = () => {
-//   const [file, setFile] = useState();
+const Main = () => {
+  const [file, setFile] = useState();
+  const [setIsPaused] = useState(false);
+  const [lastUploadedChunk, setLastUploadedChunk] = useState(0);
+  const cancelTokenSourceRef = useRef();
 
-//   const handleSubmit = async () => {
-//     if (!file) {
-//       alert("Please select a file");
-//       return;
-//     }
-
-//     try {
-//       // Get upload URL from the server
-//       const response = await axios.get(
-//         "http://localhost:8000/api/post/uploadUrl"
-//       );
-//       const { url } = response.data.data;
-
-//       const chunkSize = 1024 * 1024; // 1MB
-//       const chunks = [];
-
-//       const fileSize = file.size;
-//       const totalChunks = Math.ceil(fileSize / chunkSize);
-
-//       let offset = 0;
-
-//       while (offset < fileSize) {
-//         const slice = file.slice(offset, offset + chunkSize);
-//         const buffer = await readFileAsync(slice);
-//         chunks.push(buffer);
-//         offset += chunkSize;
-//       }
-
-//       // Send each 1MB buffer to the API
-//       for (let i = 0; i < chunks.length; i++) {
-//         const formData = new FormData();
-//         formData.append("chunk", new Blob([chunks[i]]));
-//         formData.append("fileName", file.name);
-//         formData.append("totalChunks", totalChunks);
-//         formData.append("currentChunk", i + 1);
-
-//         // Use Axios to send the formData to the API
-//         await axios.post(url, formData, {
-//           headers: {
-//             "Content-Type": "multipart/form-data",
-//           },
-//         });
-//       }
-
-//       console.log("File uploaded successfully!");
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-
-//   const readFileAsync = (file) => {
-//     return new Promise((resolve, reject) => {
-//       const reader = new FileReader();
-
-//       reader.onload = (event) => {
-//         resolve(event.target.result);
-//       };
-
-//       reader.onerror = (error) => {
-//         reject(error);
-//       };
-
-//       reader.readAsArrayBuffer(file);
-//     });
-//   };
-
-//   return (
-//     <div>
-//       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-//       <button onClick={handleSubmit}>Upload</button>
-//     </div>
-//   );
-// };
-
-// export default Main;
-
-
-
-
-
-
-/**it's code is working on progress line  */
-// import React, { useCallback, useState, useEffect } from "react";
-// import axios from "axios";
-
-// const Main = () => {
-//   const [file, setFile] = useState();
-//   const [uploadUrl, setUploadUrl] = useState(null);
-//   const [uploading, setUploading] = useState(false);
-//   const [progress, setProgress] = useState(0);
-//   const [cancelToken, setCancelToken] = useState(null);
-//   const [resumeChunk, setResumeChunk] = useState(1); // Track the last successfully uploaded chunk
-
-//   useEffect(() => {
-//     // Cleanup when component unmounts
-//     return () => {
-//       if (cancelToken) {
-//         cancelToken.cancel("Component unmounted");
-//       }
-//     };
-//   }, [cancelToken]);
-
-//   const handleStartUpload = async () => {
-//     if (!file) {
-//       alert("Please select a file");
-//       return;
-//     }
-
-//     try {
-//       // Get upload URL from the server
-//       const response = await axios.get(
-//         "http://localhost:8000/api/post/uploadUrl"
-//       );
-//       setUploadUrl(response.data.data.url);
-//       setUploading(true);
-//       setProgress(0);
-//       setCancelToken(axios.CancelToken.source());
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-
-//   const handleStopUpload = () => {
-//     if (cancelToken) {
-//       cancelToken.cancel("Upload canceled by the user");
-//       setCancelToken(null); // Reset cancel token
-//     }
-//     setUploading(false);
-//   };
-
-//   const handleResumeUpload = async () => {
-//     if (progress === 100) {
-//       setProgress(0);
-//       // Resume the upload from the next chunk
-//       setResumeChunk((prevChunk) => prevChunk + 1);
-//       await handleStartUpload();
-//     } else {
-//       console.error("Error in handleResumeUpload:");
-//     }
-//   };
-
-//   const handleSubmit = async () => {
-//     if (!file || !uploadUrl) {
-//       alert("Please select a file and start the upload");
-//       return;
-//     }
-
-//     try {
-//       const chunkSize = 1024 * 1024; // 1MB
-//       const chunks = [];
-
-//       const fileSize = file.size;
-//       const totalChunks = Math.ceil(fileSize / chunkSize);
-
-//       let offset = (resumeChunk - 1) * chunkSize; // Start from the next chunk if resuming
-
-//       while (offset < fileSize) {
-//         const slice = file.slice(offset, offset + chunkSize);
-//         const buffer = await readFileAsync(slice);
-//         chunks.push(buffer);
-//         offset += chunkSize;
-//       }
-
-//       // Send each 1MB buffer to the API
-//       for (let i = 0; i < chunks.length; i++) {
-//         if (!uploading) {
-//           console.log("Upload stopped by user");
-//           return;
-//         }
-
-//         const formData = new FormData();
-//         formData.append("chunk", new Blob([chunks[i]]));
-//         formData.append("fileName", file.name);
-//         formData.append("totalChunks", totalChunks);
-//         formData.append("currentChunk", resumeChunk + i); // Update currentChunk based on resumeChunk
-
-//         // Use Axios to send the formData to the API with the cancel token
-//         await axios.post(uploadUrl, formData, {
-//           headers: {
-//             "Content-Type": "multipart/form-data",
-//           },
-//           cancelToken: cancelToken.token,
-//         });
-
-//         // Update the progress
-//         const currentProgress = Math.floor(
-//           ((resumeChunk + i) / totalChunks) * 100
-//         );
-//         setProgress(currentProgress);
-//       }
-
-//       console.log("File uploaded successfully!");
-//       setProgress(100);
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-
-//   const readFileAsync = (file) => {
-//     return new Promise((resolve, reject) => {
-//       const reader = new FileReader();
-
-//       reader.onload = (event) => {
-//         resolve(event.target.result);
-//       };
-
-//       reader.onerror = (error) => {
-//         reject(error);
-//       };
-
-//       reader.readAsArrayBuffer(file);
-//     });
-//   };
-
-//   return (
-//     <div>
-//       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-//       <button onClick={handleStartUpload}>Start Upload</button>
-//       <button onClick={handleStopUpload}>Stop Upload</button>
-//       <button onClick={handleResumeUpload}>Resume Upload</button>
-//       <button onClick={handleSubmit}>Upload</button>
-//       {uploading && <div>Progress: {progress}%</div>}
-//     </div>
-//   );
-// };
-
-// export default Main;
-
-
-
-
-
-
-
-
-
-
-  const handleSubmit = async () => {
-    if (!file || !uploadUrl) {
-      alert("Please select a file and start the upload");
+  /**upload */
+  const handleUpload = async () => {
+    if (!file) {
+      alert("Please select a file")
       return;
     }
 
     try {
+      // Get upload URL from the server
+      const response = await axios.get(
+        "http://localhost:8000/api/post/uploadUrl"
+      );
+      const { url } = response.data.data;
+
       const chunkSize = 1024 * 1024; // 1MB
       const chunks = [];
 
       const fileSize = file.size;
       const totalChunks = Math.ceil(fileSize / chunkSize);
 
-      let offset = (resumeChunk - 1) * chunkSize; // Start from the next chunk if resuming
+      let offset = lastUploadedChunk * chunkSize;
 
       while (offset < fileSize) {
         const slice = file.slice(offset, offset + chunkSize);
@@ -265,256 +38,46 @@
 
       // Send each 1MB buffer to the API
       for (let i = 0; i < chunks.length; i++) {
-        if (!uploading) {
-          console.log("Upload stopped by user");
-          return;
-        }
-
         const formData = new FormData();
         formData.append("chunk", new Blob([chunks[i]]));
         formData.append("fileName", file.name);
         formData.append("totalChunks", totalChunks);
-        formData.append("currentChunk", resumeChunk + i); // Update currentChunk based on resumeChunk
+        formData.append("currentChunk", lastUploadedChunk + i + 1);
 
-        // Use Axios to send the formData to the API with the cancel token
-        await axios.post(uploadUrl, formData, {
+        // Use Axios to send the formData to the API
+        cancelTokenSourceRef.current = axios.CancelToken.source();
+        await axios.post(url, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-          cancelToken: cancelToken.token,
+          cancelToken: cancelTokenSourceRef.current.token,
         });
 
-        // Update the progress
-        const currentProgress = Math.floor(
-          ((resumeChunk + i) / totalChunks) * 100
-        );
-        setProgress(currentProgress);
+        // Update the last successfully uploaded chunk
+        setLastUploadedChunk(lastUploadedChunk + i + 1);
       }
 
       console.log("File uploaded successfully!");
-      // setProgress(curre);
     } catch (error) {
       console.error(error);
     }
   };
 
-
-
-
-// import React, { useState } from "react";
-// import axios from "axios";
-
-// const Main = () => {
-//   const [file, setFile] = useState();
-//   const [uploadUrl, setUploadUrl] = useState(null);
-//   const [uploading, setUploading] = useState(false);
-//   const [progress, setProgress] = useState(0);
-//   const [cancelToken, setCancelToken] = useState(null);
-//   const [resumeChunk, setResumeChunk] = useState(1);
-
-//   const handleStartUpload = async () => {
-//     if (!file) {
-//       alert("Please select a file");
-//       return;
-//     }
-
-//     try {
-//       // Get upload URL from the server
-//       const response = await axios.get(
-//         "http://localhost:8000/api/post/uploadUrl"
-//       );
-//       setUploadUrl(response.data.data.url);
-
-//       if (!uploading) {
-//         setUploading(true);
-//         setProgress(0);
-//         setCancelToken(axios.CancelToken.source());
-//       } else {
-//         console.log("Upload is already in progress");
-//       }
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-
-//   const handleStopUpload = () => {
-//     if (cancelToken) {
-//       cancelToken.cancel("Upload canceled by the user");
-//       setCancelToken(null);
-//     }
-//   };
-
-//   const handleSubmit = async () => {
-//     if (!file || !uploadUrl) {
-//       alert("Please select a file and start the upload");
-//       return;
-//     }
-
-//     try {
-//       const chunkSize = 1024 * 1024; // 1MB
-//       const chunks = [];
-
-//       const fileSize = file.size;
-//       const totalChunks = Math.ceil(fileSize / chunkSize);
-
-//       let offset = (resumeChunk - 1) * chunkSize;
-
-//       while (offset < fileSize) {
-//         const slice = file.slice(offset, offset + chunkSize);
-//         const buffer = await readFileAsync(slice);
-//         chunks.push(buffer);
-//         offset += chunkSize;
-//       }
-
-//       for (let i = 0; i < chunks.length; i++) {
-//         if (!uploading) {
-//           console.log("Upload stopped by user");
-//           return;
-//         }
-
-//         const formData = new FormData();
-//         formData.append("chunk", new Blob([chunks[i]]));
-//         formData.append("fileName", file.name);
-//         formData.append("totalChunks", totalChunks);
-//         formData.append("currentChunk", resumeChunk + i);
-
-//         await axios.post(uploadUrl, formData, {
-//           headers: {
-//             "Content-Type": "multipart/form-data",
-//           },
-//           cancelToken: cancelToken.token,
-//         });
-
-//         const currentProgress = Math.floor(
-//           ((resumeChunk + i) / totalChunks) * 100
-//         );
-//         setProgress(currentProgress);
-//       }
-
-//       console.log("File uploaded successfully!");
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-
-//   const readFileAsync = (file) => {
-//     return new Promise((resolve, reject) => {
-//       const reader = new FileReader();
-
-//       reader.onload = (event) => {
-//         resolve(event.target.result);
-//       };
-
-//       reader.onerror = (error) => {
-//         reject(error);
-//       };
-
-//       reader.readAsArrayBuffer(file);
-//     });
-//   };
-
-//   return (
-//     <div>
-//       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-//       <button onClick={handleStartUpload}>Start Upload</button>
-//       <button onClick={handleStopUpload}>Stop Upload</button>
-//       <button onClick={handleSubmit}>Upload</button>
-//       {uploading && <div>Progress: {progress}%</div>}
-//     </div>
-//   );
-// };
-
-// export default Main;
-
-import React, { useCallback, useState } from "react";
-import axios from "axios";
-
-const Main = () => {
-  const [file, setFile] = useState();
-  const [uploadUrl, setUploadUrl] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [resumeChunk, setResumeChunk] = useState(1);
-
-  const handleUpload = async () => {
-    if (!file) {
-      alert("Please select a file");
-      return;
-    }
-
-    try {
-      // Get upload URL from the server
-      const response = await axios.get(
-        "http://localhost:8000/api/post/uploadUrl"
-      );
-      setUploadUrl(response.data.data.url);
-
-      if (!uploading) {
-        setUploading(true);
-        setProgress(0);
-        setResumeChunk(1);
-        await sendChunks();
-      } else {
-        console.log("Upload is already in progress");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
+  /**pause */
   const handlePause = () => {
-    setUploading(false);
-  };
-
-  const sendChunks = async () => {
-    try {
-      const chunkSize = 1024 * 1024; // 1MB
-      const chunks = [];
-
-      const fileSize = file.size;
-      const totalChunks = Math.ceil(fileSize / chunkSize);
-
-      let offset = (resumeChunk - 1) * chunkSize;
-
-      while (offset < fileSize) {
-        const slice = file.slice(offset, offset + chunkSize);
-        const buffer = await readFileAsync(slice);
-        chunks.push(buffer);
-        offset += chunkSize;
-      }
-
-      for (let i = 0; i < chunks.length; i++) {
-        if (!uploading) {
-          console.log("Upload paused by user");
-          return;
-        }
-
-        const formData = new FormData();
-        formData.append("chunk", new Blob([chunks[i]]));
-        formData.append("fileName", file.name);
-        formData.append("totalChunks", totalChunks);
-        formData.append("currentChunk", resumeChunk + i);
-
-        await axios.post(uploadUrl, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-
-        const currentProgress = Math.floor(
-          ((resumeChunk + i) / totalChunks) * 100
-        );
-        setProgress(currentProgress);
-      }
-
-      console.log("File uploaded successfully!");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setUploading(false); // Set uploading to false after upload is complete
+    if (cancelTokenSourceRef.current) {
+      cancelTokenSourceRef.current.cancel("Upload canceled by the user");
     }
+    setIsPaused(true);
   };
 
+  /**resume */
+  const handleResume = () => {
+    setIsPaused(false);
+    handleUpload();
+  };
+
+  /**read file */
   const readFileAsync = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -536,10 +99,7 @@ const Main = () => {
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
       <button onClick={handleUpload}>Upload</button>
       <button onClick={handlePause}>Pause</button>
-      {uploading && <div>Progress: {progress}%</div>}
-      {!uploading && progress === 100 && (
-        <div>File '{file.name}' uploaded successfully!</div>
-      )}
+      <button onClick={handleResume}>Resume</button>
     </div>
   );
 };
@@ -547,63 +107,99 @@ const Main = () => {
 export default Main;
 
 
-// import React, { useCallback, useState } from "react";
+
+// import React, { useRef, useState } from "react";
 // import axios from "axios";
 
 // const Main = () => {
 //   const [file, setFile] = useState();
+//   const [isPaused, setIsPaused] = useState(false);
+//   const [lastUploadedChunk, setLastUploadedChunk] = useState(0);
+//   const cancleTokenSourceRef = useRef();
 
-//   const handleSubmit = async () => {
+//   /**Upload */
+//   const handleUpload = async () => {
 //     if (!file) {
 //       alert("Please select a file");
 //       return;
 //     }
 
 //     try {
-//       // Get upload URL from the server
-//       const response = await axios.get(
-//         "http://localhost:8000/api/post/uploadUrl"
-//       );
-//       const { url } = response.data.data;
+//       // Get uploaded URL from the server
 
-//       const chunkSize = 1024 * 1024; // 1MB
+//       const token =
+//         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTY4MTcxZDVjMDU5M2M0OGU2YzQwNjgiLCJpYXQiOjE3MDEzMjA0OTcsImV4cCI6MTcwMjE4NDQ5N30.0PFAW8aODHby5mmVngfBMJ-vKj7T3aslYEDfpoy1BNo";
+
+//       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+//       const response = await axios.get(
+//         `http://localhost:8000/api/post/uploadUrl?fileName=${file.name}`
+//       );
+
+//       console.log(response);
+
+//       console.log(response.status);
+//       const { url } = response.data.data;
+//       const chunkSize = 1024 * 1024;
 //       const chunks = [];
 
 //       const fileSize = file.size;
 //       const totalChunks = Math.ceil(fileSize / chunkSize);
 
-//       let offset = 0;
+//       let offset = lastUploadedChunk * chunkSize;
 
 //       while (offset < fileSize) {
 //         const slice = file.slice(offset, offset + chunkSize);
-//         const buffer = await readFileAsync(slice);
+//         const buffer = await readFileSync(slice);
 //         chunks.push(buffer);
 //         offset += chunkSize;
 //       }
 
-//       // Send each 1MB buffer to the API
+//       /**Send each 1MB buffer to the api */
 //       for (let i = 0; i < chunks.length; i++) {
 //         const formData = new FormData();
 //         formData.append("chunk", new Blob([chunks[i]]));
 //         formData.append("fileName", file.name);
 //         formData.append("totalChunks", totalChunks);
-//         formData.append("currentChunk", i + 1);
+//         /**================================================================= */
+//         formData.append("currentChunk", lastUploadedChunk + i + 1);
 
-//         // Use Axios to send the formData to the API
+//         // Use Axios to send the formdata to the api
+//         cancleTokenSourceRef.current = axios.CancelToken.source();
 //         await axios.post(url, formData, {
 //           headers: {
 //             "Content-Type": "multipart/form-data",
 //           },
+//           cancelToken: cancleTokenSourceRef.current.token,
 //         });
+
+//         /**================================================================= */
+//         /**Update the last successfully uploaded chunk */
+//         setLastUploadedChunk(lastUploadedChunk + i + 1);
 //       }
 
-//       console.log("File uploaded successfully!");
+//       console.log("File uploaded successfully.");
 //     } catch (error) {
-//       console.error(error);
+//       console.log(error);
 //     }
 //   };
 
-//   const readFileAsync = (file) => {
+//   /**Pause large file */
+//   const handlePause = () => {
+//     if (cancleTokenSourceRef.current) {
+//       cancleTokenSourceRef.current.cancel("Upload canceled by the user.");
+//     }
+//     setIsPaused(true);
+//   };
+
+//   /**Resume large file */
+//   const handleResume = () => {
+//     setIsPaused(false);
+//     handleUpload();
+//   };
+
+//   /**read file */
+//   const readFileSync = (file) => {
 //     return new Promise((resolve, reject) => {
 //       const reader = new FileReader();
 
@@ -622,7 +218,9 @@ export default Main;
 //   return (
 //     <div>
 //       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-//       <button onClick={handleSubmit}>Upload</button>
+//       <button onClick={handleUpload}>Upload</button>
+//       <button onClick={handlePause}>Pause</button>
+//       <button onClick={handleResume}>Resume</button>
 //     </div>
 //   );
 // };

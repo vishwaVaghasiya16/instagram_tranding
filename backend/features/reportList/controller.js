@@ -49,9 +49,11 @@ class controller {
   static update = async (req, res) => {
     const { id } = req.params;
     try {
-      const result = await reportReasonModel.findByIdAndUpdate(id, {
-        $set: req.body,
-      });
+      const result = await reportReasonModel.findByIdAndUpdate(
+        id,
+        { $set: req.body },
+        { new: true }
+      );
 
       return successResponse({
         res,
@@ -70,12 +72,11 @@ class controller {
     try {
       await isExist({ res, id, Model: reportReasonModel });
 
-      const reportReason = await reportReasonModel.findByIdAndDelete(id);
+      await reportReasonModel.findByIdAndDelete(id);
       return successResponse({
         res,
         statusCode: 200,
-        data: reportReason,
-        message: "report is deleted successfully!",
+        message: "Report is deleted.",
       });
     } catch (error) {
       return errorResponse({ funName: "reportReason.delete", res, error });

@@ -1,50 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>File Reader Client</title>
 </head>
+
 <body>
-
-  <h1>File Reader Client</h1>
-
-  <form id="fileForm">
-    <label for="filename">Filename:</label>
-    <input type="text" id="filename" name="filename" required>
-    <button type="button" onclick="readFile()">Read File</button>
-  </form>
-
-  <script>
-    function readFile() {
-      const filename = document.getElementById('filename').value;
-
-      // Construct the URL with the filename
-      const url = `http://localhost:3000/readFile?filename=${filename}`;
-
-      // Make a GET request using fetch
-      fetch(url)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-          return response.blob();
-        })
-        .then(blob => {
-          // Do something with the blob (e.g., download the file)
-          const a = document.createElement('a');
-          const url = window.URL.createObjectURL(blob);
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-        })
-        .catch(error => {
-          console.error('Error:', error);
-        });
-    }
-  </script>
-
+  <div id="root"></div>
 </body>
+
 </html>

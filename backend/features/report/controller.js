@@ -44,9 +44,11 @@ class controller {
   static update = async (req, res) => {
     const { id } = req.params;
     try {
-      const result = await reportModel.findByIdAndUpdate(id, {
-        $set: req.body,
-      });
+      const result = await reportModel.findByIdAndUpdate(
+        id,
+        { $set: req.body },
+        { new: true }
+      );
 
       return successResponse({
         res,
@@ -63,11 +65,10 @@ class controller {
   static delete = async (req, res) => {
     const { id } = req.params;
     try {
-      const result = await reportModel.findByIdAndDelete(id);
+      await reportModel.findByIdAndDelete(id);
       return successResponse({
         res,
         statusCode: 200,
-        data: result,
         message: "report delete!",
       });
     } catch (error) {

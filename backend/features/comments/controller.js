@@ -49,12 +49,15 @@ class controller {
   /**delete comments */
   static deleteComments = async (req, res) => {
     try {
-      const result = await commentModel.findByIdAndDelete(req.params.id);
+      await commentModel.findByIdAndDelete(
+        req.params.id,
+        { $set: req.body },
+        { new: true }
+      );
 
       return successResponse({
         res,
         statusCode: 200,
-        data: result,
         message: "comment deleted!",
       });
     } catch (error) {

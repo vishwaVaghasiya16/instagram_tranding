@@ -1,253 +1,174 @@
-import postModel from "./model.js";
-import { errorResponse, successResponse } from "../../helper/apiResponse.js";
-import { deleteFile, handleFile } from "../../helper/buffer.js";
-import fs from "fs";
 import path from "path";
-import { isExist } from "../../helper/common.js";
-import { v4 as uuidv4 } from "uuid";
-import { BASE_URL } from "../../config/env.js";
+import fs from "fs";
+import { successResponse } from "../../helper/apiResponse.js";
 
-import {
-  appendChunkInFile,
-  readAllChunkAndCreateFile,
-  readLargeFile,
-} from "./chunkupload.helper.js";
-
-/**track last uploaded chunks */
+const uploadsDirectory = path.join(process.cwd(), "uploads");
+const ongoingUploads = {};
 const uploadedChunks = {};
-const uploading = {};
 
-class controller {
-  /**create post */
-  static createPost = async (req, res) => {
-    const userId = req.user._id;
-    try {
-      const { caption, description, url } = req.body;
+/**(Method : 1) Append chunk in file */
+export const appendChunkInFile = async (req) => {
+  try {
+    // destructure required keys
+    const { fileId } = req.params;
+    const { buffer } = req.file;
+    const { fileName, totalChunks, currentChunk, isLastChunk } = req.body;
 
-      const imageUrl = await handleFile({
-        file: url,
-        folderName: "/images/post",
-      });
-
-      const doc = {
-        url: imageUrl,
-        caption: caption,
-        description: description,
-        userId,
-      };
-
-      /**result */
-      const result = await postModel(doc).save();
-
-      return successResponse({
-        res,
-        statusCode: 201,
-        data: result,
-        message: "Your post has been created! 🚀",
-      });
-    } catch (error) {
-      return errorResponse({ res, error });
+    if (ongoingUploads[fileId]) {
+      // Stop the ongoing upload
+      ongoingUploads[fileId].destroy();
+      delete ongoingUploads[fileId];
     }
-  };
 
-  /**get upload url */
-  static getUploadUrl = async (req, res) => {
-    try {
-      const userId = req.user._id;
-      const fileName = req.query.fileName;
-      const fileId = req.params.fileId;
+    // upload percentage
+    const chunks = Math.floor((currentChunk / totalChunks) * 100);
+    console.log(chunks + "%");
 
-      let uploadInfo = uploading[fileId];
+    // get file extension from filename
+    const fileExt = fileName.split(".").pop();
 
-      if (!uploadInfo) {
-        const existingFileId = Object.keys(uploading).find(
-          (key) => uploading[key].fileName === fileName
-        );
+    // create dir if not exist
+    if (!fs.existsSync(uploadsDirectory)) fs.mkdirSync(uploadsDirectory);
 
-        if (existingFileId) {
-          uploadInfo = uploading[existingFileId];
-        } else {
-          const newFileId = uuidv4();
-          uploadInfo = {
-            fileId: newFileId,
-            fileName,
-            totalChunks: 0,
-            uploadedChunks,
-          };
-          uploading[newFileId] = uploadInfo;
-        }
+    // output filename
+    const outputFileName = `${fileId}.${fileExt}`;
+
+    // create a write stream for the file
+    const fileStream = fs.createWriteStream(
+      `${uploadsDirectory}/${outputFileName}`,
+      {
+        flags: "a",
       }
+    );
 
-      const url = `${BASE_URL}/api/post/upload/${uploadInfo.fileId}`;
-      console.log(url);
+    // store the write stream in ongoingUploads
+    ongoingUploads[fileId] = fileStream;
 
-      return successResponse({
-        res,
-        statusCode: 200,
-        data: {
-          fileId: uploadInfo.fileId,
-          fileName,
-          url,
-          userId,
-        },
-        message: "URL generated successfully.",
-      });
-    } catch (error) {
-      return errorResponse({ res, error });
+    // compare the current chunk and chunk with last upload chunk
+    if (currentChunk === uploadedChunks[fileId]) {
+      console.log("Resuming upload from chunk", currentChunk);
+    } else {
+      console.log("Starting upload from chunk", currentChunk);
     }
-  };
 
-  /**large file uploading */
-  static upload = async (req, res) => {
-    try {
-      // Method 1
-      await appendChunkInFile(req);
+    // write the buffer to the file
+    fileStream.write(buffer);
 
-      // Method 2
-      // await readAllChunkAndCreateFile(req);
+    // Track the uploaded chunk
+    uploadedChunks[fileId] = currentChunk;
 
-      successResponse({
-        res,
-        statusCode: 200,
-        message: "File uploaded successfully.",
-      });
-    } catch (error) {
-      console.log(error);
-      return errorResponse({ res, error });
+    // when it's the last chunk, close the file stream
+    if (isLastChunk) {
+      fileStream.end();
+      console.log("File uploading successfully.");
+      delete ongoingUploads[fileId];
+      delete uploadedChunks[fileId];
     }
-  };
+  } catch (error) {
+    console.log(`[ERROR]:`, error);
+  }
+};
 
-  /**resume chunk uploading */
-  static resumeUpload = async (req, res) => {
-    try {
-      const fileId = req.params.fileId;
+/**(Method : 2) Read all chunks and create file */
+export const readAllChunkAndCreateFile = async (req) => {
+  try {
+    const { fileId } = req.params;
+    const chunk = req.file.buffer;
+    const { totalChunks, currentChunk, fileName, isLastChunk } = req.body;
+    const tempchunkDir = `${uploadsDirectory}/chunks`;
 
-      let uploadInfo = uploading[fileId];
+    // create dir if not exist
+    if (!fs.existsSync(uploadsDirectory)) fs.mkdirSync(uploadsDirectory);
 
-      if (!uploadInfo) {
-        return errorResponse({
-          res,
-          statusCode: 400,
-          message: "Upload information not found for the specified file ID.",
-        });
-      }
-
-      const url = `${BASE_URL}/api/post/upload/${uploadInfo.fileId}`;
-      console.log(url);
-
-      return successResponse({
-        res,
-        statusCode: 200,
-        data: {
-          fileId: uploadInfo.fileId,
-          fileName: uploadInfo.fileName,
-          url,
-          userId: uploadInfo.userId,
-        },
-        message: "Upload resumed successfully.",
-      });
-    } catch (error) {
-      return errorResponse({ res, error });
+    // create chunks directory if not exist
+    if (!fs.existsSync(tempchunkDir)) {
+      fs.mkdirSync(tempchunkDir);
     }
-  };
 
-  /**read file */
-  static readFile = async (req, res) => {
-    try {
-      await readLargeFile(req, res);
-    } catch (error) {
-      console.log(error);
-      return errorResponse({ res, error });
-    }
-  };
+    const fileExt = fileName.split(".").pop();
 
-  /**get all posts */
-  static getAllPost = async (req, res) => {
-    try {
-      const { id } = req.params;
-      let filter = {};
-      if (id) filter._id = id;
-      const getPost = await postModel.find(filter);
+    /**upload percentage */
+    const percentage = Math.floor((currentChunk / totalChunks) * 100);
+    console.log(percentage + "%");
 
-      return successResponse({
-        res,
-        statusCode: 200,
-        data: getPost,
-        message: "Post list retrived successfully",
-      });
-    } catch (error) {
-      return errorResponse({ res, error });
-    }
-  };
+    const chunkFileName = `${fileId}_part_${currentChunk}.${fileExt}`;
 
-  /**update post */
-  static updatePost = async (req, res) => {
-    const { id } = req.params;
-    try {
-      const { caption, url, description } = req.body;
+    await fs.promises.writeFile(`${tempchunkDir}/${chunkFileName}`, chunk);
 
-      const post = await postModel.findById(id);
-      if (!post) {
-        return errorResponse({
-          funName: "post.update",
-          res,
-          error: Error("Post not found"),
-          statusCode: 404,
-        });
-      }
+    if (Number(totalChunks) === Number(currentChunk)) {
+      // create dir if not exist
+      if (!fs.existsSync(uploadsDirectory)) fs.mkdirSync(uploadsDirectory);
 
-      // Upload the new image
-      const buffer = Buffer.from(url, "base64");
-      const newFilePath = path.join(
-        process.cwd(),
-        "public",
-        "images",
-        "post",
-        post.url
+      // output filename
+      const fileName = `${req.params.fileId}.${fileExt}`;
+
+      /**create writeable stream */
+      const writeStream = fs.createWriteStream(
+        `${uploadsDirectory}/${fileName}`
       );
 
-      fs.writeFileSync(newFilePath, buffer);
+      const bufferArray = [];
+      for (let i = 1; i <= totalChunks; i++) {
+        const chunkFilePath = `${tempchunkDir}/${fileId}_part_${i}.${fileExt}`;
 
-      // Update the post details with the new URL
-      const result = await postModel.findByIdAndUpdate(
-        id,
-        { $set: { caption, description } },
-        { new: true }
-      );
+        const chunkBuffer = await fs.promises.readFile(chunkFilePath);
+        bufferArray.push(chunkBuffer);
 
+        fs.unlinkSync(chunkFilePath);
+      }
+
+      const buffer = Buffer.concat(bufferArray);
+      writeStream.write(buffer);
+    }
+
+    if (isLastChunk) {
+      fileStream.end();
+      console.log("File uploading successfully.");
+      delete ongoingUploads[fileId];
+      delete uploadedChunks[fileId];
+    }
+  } catch (error) {
+    console.log(`[ERROR]:`, error);
+  }
+};
+
+/**read large file */
+export const readLargeFile = async (req, res) => {
+  try {
+    const { fileName } = req.params;
+
+    if (!fileName) {
+      res.status(400).send("Bad Request: Please provide a filename.");
+      return;
+    }
+
+    const filePath = path.join(uploadsDirectory, fileName);
+
+    if (!fs.existsSync(filePath)) {
       return successResponse({
         res,
-        statusCode: 200,
-        data: result,
-        message: "Post updated!",
+        statusCode: 404,
+        message: "Not Found: The specified file does not exist.",
       });
-    } catch (error) {
-      return errorResponse({ res, error });
     }
-  };
 
-  /**delete post */
-  static delete = async (req, res) => {
-    const { id } = req.params;
-    try {
-      const result = await isExist({ res, id, Model: postModel });
+    const chunkSize = 1024 * 1024;
+    /**read stream */
+    const readStream = fs.createReadStream(filePath, {
+      highWaterMark: chunkSize,
+    });
 
-      // Remove image from folder
-      await deleteFile({ fileName: result.url, folderName: "/images/post" });
+    /**handle event */
+    readStream.on("data", (chunk) => {
+      res.write(chunk);
+    });
 
-      // Delete document from database
-      await postModel.findByIdAndDelete(id);
+    readStream.on("end", () => {
+      res.end();
+    });
 
-      // success response
-      return successResponse({
-        res,
-        statusCode: 200,
-        message: "post deleted successfully!",
-      });
-    } catch (error) {
-      return errorResponse({ funName: "post.delete", res, error });
-    }
-  };
-}
-
-export default controller;
+    readStream.pipe(res);
+  } catch (error) {
+    console.log(`[ERROR]:`, error);
+  }
+};

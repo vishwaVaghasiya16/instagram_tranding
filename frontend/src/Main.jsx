@@ -1,10 +1,11 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
 
 const Main = () => {
   const [file, setFile] = useState();
   const [isPaused, setIsPaused] = useState(false);
   const [lastUploadedChunk, setLastUploadedChunk] = useState(0);
+  const [uploadedChunks, setUploadedChunks] = useState([]);
   const cancleTokenSourceRef = useRef();
 
   /**Upload */
@@ -16,9 +17,8 @@ const Main = () => {
 
     try {
       // Get uploaded URL from the server
-
       const token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTVhZTQ4ZWI0NGIwOTIyNzdhZmQ2ZDIiLCJpYXQiOjE3MDA0NTU1OTAsImV4cCI6MTcwMTMxOTU5MH0.fZR-8pkvwAa2YkXij7rWb5M8rEe9QfHNfz3WVgrIupQ";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTY4MTcxZDVjMDU5M2M0OGU2YzQwNjgiLCJpYXQiOjE3MDEzMjA0OTcsImV4cCI6MTcwMjE4NDQ5N30.0PFAW8aODHby5mmVngfBMJ-vKj7T3aslYEDfpoy1BNo";
 
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
@@ -47,11 +47,15 @@ const Main = () => {
 
       /**Send each 1MB buffer to the api */
       for (let i = 0; i < chunks.length; i++) {
+        if (uploadedChunks.includes(lastUploadedChunk + i)) {
+          continue;
+        }
+
         const formData = new FormData();
         formData.append("chunk", new Blob([chunks[i]]));
         formData.append("fileName", file.name);
         formData.append("totalChunks", totalChunks);
-        formData.append("currentChunk", lastUploadedChunk + i + 1);
+        formData.append("currentChunk", lastUploadedChunk + i - 1);
 
         // Use Axios to send the formdata to the api
         cancleTokenSourceRef.current = axios.CancelToken.source();
@@ -62,8 +66,12 @@ const Main = () => {
           cancelToken: cancleTokenSourceRef.current.token,
         });
 
-        /**Update the last successfully uploaded chunk */
+        // Update the last successfully uploaded chunk
         setLastUploadedChunk(lastUploadedChunk + i + 1);
+        setUploadedChunks((prevChunks) => [
+          ...prevChunks,
+          lastUploadedChunk + i - 1,
+        ]);
       }
 
       console.log("File uploaded successfully.");
