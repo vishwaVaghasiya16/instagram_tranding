@@ -1,4 +1,4 @@
-import likeModel from "./model.js";
+import likeReplyCommentModel from "./model.js";
 import { errorResponse, successResponse } from "../../helper/apiResponse.js";
 
 class controller {
@@ -9,16 +9,16 @@ class controller {
 
     try {
       // Check if the user has already liked the post
-      const existingLike = await likeModel.findOne({
+      const existingLike = await likeReplyCommentModel.findOne({
         userId,
         replyCommentId: id,
       });
 
       if (existingLike) {
         // User has already liked the post, so delete the like to "dislike" it
-        await likeModel.findByIdAndDelete(existingLike._id);
+        await likeReplyCommentModel.findByIdAndDelete(existingLike._id);
 
-        const likeCount = await likeModel
+        const likeCount = await likeReplyCommentModel
           .find({ replyCommentId: id })
           .countDocuments();
         return successResponse({
@@ -31,9 +31,12 @@ class controller {
           message: "User disliked!",
         });
       } else {
-        const result = await likeModel.create({ userId, replyCommentId: id });
+        const result = await likeReplyCommentModel.create({
+          userId,
+          replyCommentId: id,
+        });
 
-        const likeCount = await likeModel
+        const likeCount = await likeReplyCommentModel
           .find({ replyCommentId: id })
           .countDocuments();
 
@@ -58,15 +61,15 @@ class controller {
     const userId = req.user._id;
 
     try {
-      const existingLike = await likeModel.findOne({
+      const existingLike = await likeReplyCommentModel.findOne({
         userId,
         replyCommentId: id,
       });
 
       if (existingLike) {
-        await likeModel.findByIdAndDelete(existingLike._id);
+        await likeReplyCommentModel.findByIdAndRemove(existingLike._id);
 
-        const likeCount = await likeModel
+        const likeCount = await likeReplyCommentModel
           .find({ replyCommentId: id })
           .countDocuments();
         return successResponse({
@@ -100,7 +103,7 @@ class controller {
 
     try {
       // Find all unique user IDs who liked the post
-      const userIds = await likeModel.distinct("userId", {
+      const userIds = await likeReplyCommentModel.distinct("userId", {
         replyCommentId: id,
       });
 
@@ -111,7 +114,7 @@ class controller {
         res,
         statusCode: 200,
         data: {
-          userIds: userIds,
+          users: userIds,
           likeCount: likeCount,
         },
         message: "Successfully retrieved like count!",

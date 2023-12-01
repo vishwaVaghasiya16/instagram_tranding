@@ -54,7 +54,7 @@ class controller {
       const existingLike = await likeModel.findOne({ userId, postId: id });
 
       if (existingLike) {
-        await likeModel.findByIdAndDelete(existingLike._id);
+        await likeModel.findByIdAndRemove(existingLike._id);
 
         const likeCount = await likeModel.find({ postId: id }).countDocuments();
         return successResponse({

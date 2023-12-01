@@ -1,4 +1,4 @@
-import likeModel from "./model.js";
+import likeUnlikeCommentModel from "./model.js";
 import { errorResponse, successResponse } from "../../helper/apiResponse.js";
 
 class controller {
@@ -9,13 +9,16 @@ class controller {
 
     try {
       // Check if the user has already liked the post
-      const existingLike = await likeModel.findOne({ userId, commentId: id });
+      const existingLike = await likeUnlikeCommentModel.findOne({
+        userId,
+        commentId: id,
+      });
 
       if (existingLike) {
         // User has already liked the post, so delete the like to "dislike" it
-        await likeModel.findByIdAndDelete(existingLike._id);
+        await likeUnlikeCommentModel.findByIdAndDelete(existingLike._id);
 
-        const likeCount = await likeModel
+        const likeCount = await likeUnlikeCommentModel
           .find({ commentId: id })
           .countDocuments();
         return successResponse({
@@ -28,9 +31,12 @@ class controller {
           message: "User disliked!",
         });
       } else {
-        const result = await likeModel.create({ userId, commentId: id });
+        const result = await likeUnlikeCommentModel.create({
+          userId,
+          commentId: id,
+        });
 
-        const likeCount = await likeModel
+        const likeCount = await likeUnlikeCommentModel
           .find({ commentId: id })
           .countDocuments();
 
@@ -55,12 +61,15 @@ class controller {
     const userId = req.user._id;
 
     try {
-      const existingLike = await likeModel.findOne({ userId, commentId: id });
+      const existingLike = await likeUnlikeCommentModel.findOne({
+        userId,
+        commentId: id,
+      });
 
       if (existingLike) {
-        await likeModel.findByIdAndDelete(existingLike._id);
+        await likeUnlikeCommentModel.findByIdAndRemove(existingLike._id);
 
-        const likeCount = await likeModel
+        const likeCount = await likeUnlikeCommentModel
           .find({ commentId: id })
           .countDocuments();
         return successResponse({
@@ -94,7 +103,9 @@ class controller {
 
     try {
       // Find all unique user IDs who liked the post
-      const userIds = await likeModel.distinct("userId", { commentId: id });
+      const userIds = await likeUnlikeCommentModel.distinct("userId", {
+        commentId: id,
+      });
 
       // Get the total like count for the post
       const likeCount = userIds.length;

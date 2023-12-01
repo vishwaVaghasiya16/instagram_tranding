@@ -20,5 +20,8 @@ const likeUnlikeSchema = new mongoose.Schema(
   }
 );
 
-const likeReply = mongoose.model("likeReply", likeUnlikeSchema);
-export default likeReply;
+const likeReplyCommentModel = mongoose.model(
+  "likeUnlikeReplyComment",
+  likeUnlikeSchema
+);
+export default likeReplyCommentModel;

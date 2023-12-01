@@ -23,9 +23,9 @@ app.use(express.static("./uploads"));
 /**route */
 app.use("/api/auth", route.authRoute);
 app.use("/api/post", route.postRoute);
-app.use("/api", route.likeRoute);
+app.use("/api/like", route.likeRoute);
 app.use("/api/comment", route.commentRoute);
-app.use("/api/comment", route.commentsLikeDislikeRoute);
+app.use("/api/comments", route.commentsLikeDislikeRoute);
 app.use("/api/replycomment", route.replyCommentRoute);
 app.use("/api/likeReply", route.replyLikeRoute);
 app.use("/api/report", route.reportRoute);

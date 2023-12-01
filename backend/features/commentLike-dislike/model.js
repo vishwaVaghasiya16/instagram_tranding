@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 /**like-unlike comment schema */
-const commentsSchema = new mongoose.Schema(
+const likeUnlikeCommentSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -22,5 +22,9 @@ const commentsSchema = new mongoose.Schema(
   }
 );
 
-const commentsModel = mongoose.model("like-dislike", commentsSchema);
-export default commentsModel;
+const likeUnlikeCommentModel = mongoose.model(
+  "likeUnlikeComment",
+  likeUnlikeCommentSchema
+);
+
+export default likeUnlikeCommentModel;

@@ -1,7 +1,7 @@
 import express from "express";
 import { verifyToken } from "../../middleware/verifyToken.js";
 import controller from "../comments/controller.js";
-import validate from "../comments/validate.js";
+import validate from "./validate.js";
 
 const route = express.Router();
 

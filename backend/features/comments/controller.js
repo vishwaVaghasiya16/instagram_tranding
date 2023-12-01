@@ -29,16 +29,57 @@ class controller {
 
   /**get all comments */
   static getAllComments = async (req, res) => {
-    const { id } = req.params;
     try {
-      const result = await commentModel
-        .find({ postId: id })
-        .populate({ path: "like", select: "userId" })
-        .populate({ path: "reply", select: "reply userId" });
+      const aggregatedResult = await commentModel.aggregate([
+        {
+          // Stage 1: Perform a $lookup to join with the "likeunlikecomments" collection
+          $lookup: {
+            from: "likeunlikecomments", // Specify the model name to join
+            localField: "like", // Specify the local key name to match
+            foreignField: "_id", // Specify the foreign key in "likeunlikecomments"
+            as: "likes", // Specify the alias for the joined result
+          },
+        },
+        {
+          // Stage 2: Perform a $lookup to join with the "replycomments" collection
+          $lookup: {
+            from: "replycomments",
+            localField: "reply",
+            foreignField: "_id", // Specify the foreign key in "replycomments"
+            as: "replyComment",
+          },
+        },
+        {
+          // Stage 3: Project the desired fields from the aggregated result
+          $project: {
+            _id: 1,
+            project: 1,
+            likes: {
+              // Map the "likes" array to extract relevant information
+              $map: {
+                input: "$likes",
+                as: "likes",
+                in: {
+                  user: "$$likes.userId", // Extract the "userId" from the "likes" array
+                },
+              },
+            },
+            reply: {
+              $map: {
+                input: "$replyComment",
+                as: "replyComment",
+                in: {
+                  reply: "$$replyComment.reply",
+                },
+              },
+            },
+          },
+        },
+      ]);
       return successResponse({
         res,
         statusCode: 200,
-        data: result,
+        data: aggregatedResult,
         message: "Comments list retrieved successfully!",
       });
     } catch (error) {
