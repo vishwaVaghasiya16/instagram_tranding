@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 
 /**comment api */
 const commentSchema = new mongoose.Schema(
@@ -15,16 +15,10 @@ const commentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
     },
-    reply: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "replyComment",
-      },
-    ],
     like: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "likeUnlikeComment",
+        ref: "user",
       },
     ],
   },

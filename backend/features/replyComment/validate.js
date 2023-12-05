@@ -5,7 +5,7 @@ class validate {
   /**create reply comment */
   static create = async (req, res, next) => {
     const validation = joi.object().keys({
-      reply: joi.string().required(),
+      reply: joi.string(),
     });
 
     const { error } = validation.validate(req.body, { abortEarly: false });

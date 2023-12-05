@@ -20,6 +20,12 @@ const postSchema = new mongoose.Schema(
     url: {
       type: String,
     },
+    like: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "user",
+      },
+    ],
   },
   {
     timestamps: true,

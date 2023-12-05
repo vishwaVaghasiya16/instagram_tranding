@@ -249,6 +249,52 @@ class controller {
       return errorResponse({ funName: "post.delete", res, error });
     }
   };
+
+  /**like post */
+  static like = async (req, res) => {
+    try {
+      const post = await postModel.findById(req.params.id);
+      if (!post.like.includes(req.user._id)) {
+        await postModel.updateOne(
+          { _id: req.params.id },
+          { $push: { like: req.user._id } }
+        );
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "Post is liked.",
+        });
+      }
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
+
+  /**unlike post */
+  static unlike = async (req, res) => {
+    try {
+      const post = await postModel.findById(req.params.id);
+      if (post.like.includes(req.user._id)) {
+        await postModel.updateOne(
+          { _id: req.params.id },
+          { $pull: { like: req.user._id } }
+        );
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "Post is unliked.",
+        });
+      } else {
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "Post was not liked before.",
+        });
+      }
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
 }
 
 export default controller;

@@ -1,19 +1,22 @@
 import { errorResponse, successResponse } from "../../helper/apiResponse.js";
 import commentModel from "./model.js";
 
+const likedComments = new Map();
+
 class controller {
   /**create comment */
   static createComment = async (req, res) => {
     const { id } = req.params;
     try {
       const userId = req.user._id;
-      const { comment, like, reply } = req.body;
+      const userName = req.user.userName;
+      const { comment, like } = req.body;
       const result = await commentModel.create({
+        userName,
         comment,
         userId,
         postId: id,
         like,
-        reply,
       });
 
       return successResponse({
@@ -30,52 +33,36 @@ class controller {
   /**get all comments */
   static getAllComments = async (req, res) => {
     try {
-      const aggregatedResult = await commentModel.aggregate([
-        {
-          // Stage 1: Perform a $lookup to join with the "likeunlikecomments" collection
-          $lookup: {
-            from: "likeunlikecomments", // Specify the model name to join
-            localField: "like", // Specify the local key name to match
-            foreignField: "_id", // Specify the foreign key in "likeunlikecomments"
-            as: "likes", // Specify the alias for the joined result
-          },
-        },
-        {
-          // Stage 2: Perform a $lookup to join with the "replycomments" collection
-          $lookup: {
-            from: "replycomments",
-            localField: "reply",
-            foreignField: "_id", // Specify the foreign key in "replycomments"
-            as: "replyComment",
-          },
-        },
-        {
-          // Stage 3: Project the desired fields from the aggregated result
-          $project: {
-            _id: 1,
-            project: 1,
-            likes: {
-              // Map the "likes" array to extract relevant information
-              $map: {
-                input: "$likes",
-                as: "likes",
-                in: {
-                  user: "$$likes.userId", // Extract the "userId" from the "likes" array
-                },
-              },
-            },
-            reply: {
-              $map: {
-                input: "$replyComment",
-                as: "replyComment",
-                in: {
-                  reply: "$$replyComment.reply",
-                },
-              },
-            },
-          },
-        },
-      ]);
+      // const aggregatedResult = await commentModel.aggregate([
+      //   {
+      //     $lookup: {
+      //       from: "user",
+      //       localField: "like",
+      //       foreignField: "_id",
+      //       as: "likes",
+      //     },
+      //   },
+      //   {
+      //     $project: {
+      //       _id: 1,
+      //       project: 1,
+      //       comment: 1,
+      //       postId: 1,
+      //       createdAt: 1,
+      //       likes: {
+      //         $map: {
+      //           input: "$likes",
+      //           as: "likes",
+      //           in: {
+      //             user: "$$likes.userId",
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // ]);
+
+      const aggregatedResult = await commentModel.find();
       return successResponse({
         res,
         statusCode: 200,
@@ -101,6 +88,56 @@ class controller {
         statusCode: 200,
         message: "comment deleted!",
       });
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
+
+  /**like comment */
+  static like = async (req, res) => {
+    try {
+      const comment = await commentModel.findById(req.params.id);
+      if (!comment.like.includes(req.user._id)) {
+        await commentModel.updateOne(
+          { _id: req.params.id },
+          {
+            $push: { like: req.user._id },
+          }
+        );
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "Comment is liked.",
+        });
+      }
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
+
+  /**unlike comment */
+  static unlike = async (req, res) => {
+    try {
+      const comment = await commentModel.findById(req.params.id);
+      if (comment.like.includes(req.user._id)) {
+        await commentModel.updateOne(
+          { _id: req.params.id },
+          {
+            $pull: { like: req.user._id },
+          }
+        );
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "Comment is unliked.",
+        });
+      } else {
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "Comment was not liked before.",
+        });
+      }
     } catch (error) {
       return errorResponse({ res, error });
     }

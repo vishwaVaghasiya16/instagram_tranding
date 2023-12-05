@@ -11,10 +11,13 @@ route.post("/:id", verifyToken, validate.create, controller.create);
 /**get all reply comments */
 route.get("/:id", verifyToken, controller.get);
 
-/**like reply */
-route.post("/like/:id", verifyToken, controller.like);
-
 /**delete reply comment */
 route.delete("/:id", verifyToken, controller.delete);
+
+/**like reply */
+route.put("/:id/likereply", verifyToken, controller.like);
+
+/**unlike reply */
+route.put("/:id/unlikereply", verifyToken, controller.unlike);
 
 export default route;

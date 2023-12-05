@@ -14,4 +14,10 @@ route.get("/:id?", verifyToken, controller.getAllComments);
 /**delete post */
 route.delete("/:id", verifyToken, controller.deleteComments);
 
+/**like comment */
+route.put("/:id/like", verifyToken, controller.like);
+
+/**unlike comment */
+route.put("/:id/unlike", verifyToken, controller.unlike);
+
 export default route;

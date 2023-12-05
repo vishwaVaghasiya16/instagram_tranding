@@ -30,8 +30,6 @@ route.get("/uploadLastChunk/:fileId/last-chunk", controller.resumeUpload);
 /**read file in chunk */
 route.get("/readFile/:fileName", controller.readFile);
 
-route.post("/resume/:fileId", controller.resumeUpload);
-
 /**get all posts */
 route.get("/:id?", controller.getAllPost);
 
@@ -40,5 +38,11 @@ route.put("/:id", validate.update, controller.updatePost);
 
 /**delete post */
 route.delete("/:id", controller.delete);
+
+/**like post */
+route.put("/:id/likepost", verifyToken, controller.like);
+
+/**unlike post */
+route.put("/:id/unlikepost", verifyToken, controller.unlike);
 
 export default route;

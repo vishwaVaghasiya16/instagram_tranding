@@ -142,18 +142,18 @@ class controller {
       // Method 1 - for standerd use while need to add multipal conditions
       // let result;
       // let filter = {};
-      // if (title) filter.title = { $regex: title, $options: "i" }
+      // if (userName) filter.userName = { $regex: userName, $options: "i" };
       // if (id) {
-      //     result = await feedbacklistModel.findOne(id)
+      //   result = await authModel.findOne(id);
       // } else {
-      //     result = await feedbacklistModel.find(filter)
+      //   result = await authModel.find(filter);
       // }
 
       // Method 2 - for small querys
       let filter = {};
       if (id) filter._id = id;
-      if (title) filter.userName = { $regex: userName, $options: "i" };
-      const result = await feedbacklistModel.find(userName);
+      if (userName) filter.userName = { $regex: userName, $options: "i" };
+      const result = await authModel.find(filter);
 
       return successResponse({
         res,

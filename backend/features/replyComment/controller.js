@@ -6,8 +6,15 @@ class controller {
   static create = async (req, res) => {
     const { id } = req.params;
     try {
+      const userId = req.user._id;
       const { reply } = req.body;
-      const result = await replyCommentModel.create({ reply, commentId: id });
+      const result = await replyCommentModel.create({
+        userId,
+        reply,
+        commentId: id,
+      });
+
+      console.log(result);
 
       return successResponse({
         res,
@@ -36,24 +43,6 @@ class controller {
     }
   };
 
-  /**like reply comments */
-  static like = async (req, res) => {
-    const { id } = req.params;
-    try {
-      const userId = req.user._id;
-      const result = await replyCommentModel.create({ userId, commentId: id });
-
-      return successResponse({
-        res,
-        statusCode: 200,
-        data: result,
-        message: "user liked!",
-      });
-    } catch (error) {
-      return errorResponse({ res, error });
-    }
-  };
-
   /**delete reply comment */
   static delete = async (req, res) => {
     try {
@@ -64,6 +53,52 @@ class controller {
         statusCode: 200,
         message: "comment deleted!",
       });
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
+
+  /**like reply */
+  static like = async (req, res) => {
+    try {
+      const reply = await replyCommentModel.findById(req.params.id);
+      if (!reply.like.includes(req.user._id)) {
+        await replyCommentModel.updateOne(
+          { _id: req.params.id },
+          { $push: { like: req.user._id } }
+        );
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "User is liked.",
+        });
+      }
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
+
+  /**unlike reply */
+  static unlike = async (req, res) => {
+    try {
+      const reply = await replyCommentModel.findById(req.params.id);
+      if (reply.like.includes(req.user._id)) {
+        await replyCommentModel.updateOne(
+          { _id: req.params.id },
+          { $pull: { like: req.user._id } }
+        );
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "User is unliked.",
+        });
+      } else {
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "User was not liked before.",
+        });
+      }
     } catch (error) {
       return errorResponse({ res, error });
     }
