@@ -45,4 +45,7 @@ route.put("/:id/likepost", verifyToken, controller.like);
 /**unlike post */
 route.put("/:id/unlikepost", verifyToken, controller.unlike);
 
+/**get timeline post */
+route.get("/timeline/all", verifyToken, controller.timeline);
+
 export default route;

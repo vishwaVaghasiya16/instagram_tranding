@@ -12,6 +12,7 @@ import {
   readAllChunkAndCreateFile,
   readLargeFile,
 } from "./chunkupload.helper.js";
+import authModel from "../auth/model.js";
 
 /**track last uploaded chunks */
 const uploadedChunks = {};
@@ -291,6 +292,23 @@ class controller {
           message: "Post was not liked before.",
         });
       }
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
+
+  /**get timeline (i show my following friends post) */
+  static timeline = async (req, res) => {
+    const userId = req.user._id;
+    try {
+      const currentUser = await authModel.findById(userId);
+      const post = await postModel.find({ userId: currentUser._id });
+      const friendPosts = await Promise.all(
+        currentUser.following.map((friendId) => {
+          return postModel.find({ userId: friendId });
+        })
+      );
+      res.json(post.concat(...friendPosts));
     } catch (error) {
       return errorResponse({ res, error });
     }
