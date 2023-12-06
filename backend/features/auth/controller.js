@@ -200,6 +200,68 @@ class controller {
       return errorResponse({ res, error });
     }
   };
+
+  /**follow user */
+  static follow = async (req, res) => {
+    const userId = req.user._id;
+    const { id } = req.params;
+    if (userId !== id) {
+      try {
+        const user = await authModel.findById(id);
+        const currentUser = await authModel.findById(userId);
+        if (!user.followers.includes(userId)) {
+          await user.updateOne({ $push: { followers: userId } });
+          await currentUser.updateOne({ $push: { following: id } });
+          return successResponse({
+            res,
+            statusCode: 200,
+            message: "User has been followed.",
+          });
+        } else {
+          return successResponse({
+            res,
+            statusCode: 403,
+            message: "You already follow this user.",
+          });
+        }
+      } catch (error) {
+        return errorResponse({
+          res,
+          error,
+          statusCode: 500,
+        });
+      }
+    }
+  };
+
+  /**unfollow user */
+  static unfollow = async (req, res) => {
+    const userId = req.user._id;
+    const { id } = req.params;
+    if (userId !== id) {
+      try {
+        const user = await authModel.findById(id);
+        const currentUser = await authModel.findById(userId);
+        if (user.followers.includes(userId)) {
+          await user.updateOne({ $pull: { followers: userId } });
+          await currentUser.updateOne({ $pull: { following: id } });
+          return successResponse({
+            res,
+            statusCode: 200,
+            message: "User has been unfollowed.",
+          });
+        } else {
+          return successResponse({
+            res,
+            statusCode: 403,
+            message: "You don't follow this user.",
+          });
+        }
+      } catch (error) {
+        return errorResponse({ res, error });
+      }
+    }
+  };
 }
 
 export default controller;

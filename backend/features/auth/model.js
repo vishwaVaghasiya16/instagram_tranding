@@ -32,6 +32,14 @@ const authSchema = new mongoose.Schema(
       enum: Object.values(userRoleEnum),
       default: userRoleEnum.EMPLOYEE,
     },
+    followers: {
+      type: Array,
+      default: [],
+    },
+    following: {
+      type: Array,
+      default: [],
+    },
   },
   {
     timestamps: true,

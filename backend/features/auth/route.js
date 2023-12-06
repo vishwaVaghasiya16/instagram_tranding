@@ -39,4 +39,10 @@ route.put("/:id", validate.updateUser, controller.updateUser);
 /**delete user */
 route.delete("/:id", controller.deleteUser);
 
+/**follow user */
+route.put("/:id/follow", verifyToken, controller.follow);
+
+/**unfollow user */
+route.put("/:id/unfollow", verifyToken, controller.unfollow);
+
 export default route;
