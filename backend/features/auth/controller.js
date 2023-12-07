@@ -69,6 +69,30 @@ class controller {
     }
   };
 
+  /**logout user */
+  static logout = async (req, res) => {
+    try {
+      const token = req.header("Authorization").replace("Bearer ", "");
+      jwt.verify(token, JWT_SECRET_KEY, (error, decoded) => {
+        if (error) {
+          return errorResponse({
+            res,
+            error,
+            statusCode: 401,
+            message: "Invalid token or already logged out.",
+          });
+        }
+        return successResponse({
+          res,
+          statusCode: 200,
+          message: "Logout successful",
+        });
+      });
+    } catch (error) {
+      return errorResponse({ res, error });
+    }
+  };
+
   /**change password */
   static changePassword = async (req, res) => {
     try {

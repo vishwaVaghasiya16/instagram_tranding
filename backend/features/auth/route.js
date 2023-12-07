@@ -7,6 +7,7 @@ const route = express.Router();
 
 route.post("/register", validate.create, controller.register);
 route.post("/login", validate.login, controller.login);
+route.post("/logout", verifyToken, controller.logout);
 
 /**change password */
 route.patch(
