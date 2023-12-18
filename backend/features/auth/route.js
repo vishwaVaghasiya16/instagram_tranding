@@ -7,7 +7,6 @@ const route = express.Router();
 
 route.post("/register", validate.create, controller.register);
 route.post("/login", validate.login, controller.login);
-route.post("/logout", verifyToken, controller.logout);
 
 /**change password */
 route.patch(
@@ -43,7 +42,16 @@ route.delete("/:id", controller.deleteUser);
 /**follow user */
 route.put("/:id/follow", verifyToken, controller.follow);
 
+/**send request */
+route.put("/send/:id", verifyToken, controller.sendFriendRequest);
+
+/**reject friend request */
+route.put("/cancle/:id", verifyToken, controller.rejectFriendRequest);
+
 /**unfollow user */
 route.put("/:id/unfollow", verifyToken, controller.unfollow);
+
+/**get user details */
+route.get("/user/:id", verifyToken, controller.getUserDetails);
 
 export default route;

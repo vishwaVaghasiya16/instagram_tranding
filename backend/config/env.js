@@ -13,4 +13,5 @@ export const {
   SMTP_USERNAME,
   SMTP_PASSWORD,
   BASE_URL,
+  SOCKET_TIMEOUT,
 } = process.env;

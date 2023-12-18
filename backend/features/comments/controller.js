@@ -1,7 +1,6 @@
 import { errorResponse, successResponse } from "../../helper/apiResponse.js";
+import notificationModel from "../notification/model.js";
 import commentModel from "./model.js";
-
-const likedComments = new Map();
 
 class controller {
   /**create comment */
@@ -18,6 +17,22 @@ class controller {
         postId: id,
         like,
       });
+
+      // Notify other users about comment
+      io.emit("comment_post", {
+        userId: req.user._id,
+        postId: req.params.id,
+        comment: req.body.comment,
+      });
+
+      // create notification for the commented post
+      const notification = await notificationModel({
+        user: comment.user,
+        type: "comment",
+        post: req.params.postId,
+      });
+
+      await notification.save();
 
       return successResponse({
         res,
@@ -97,6 +112,19 @@ class controller {
   static like = async (req, res) => {
     try {
       const comment = await commentModel.findById(req.params.id);
+
+      // Notify other users about the like
+      io.emit("like_comment", { userId: req.user._id, comment: req.params.id });
+
+      // For comment notification
+      const notification = new notificationModel({
+        user: comment.userId,
+        type: "LIKE_COMMENT",
+        comment: req.params.id,
+      });
+
+      await notification.save();
+
       if (!comment.like.includes(req.user._id)) {
         await commentModel.updateOne(
           { _id: req.params.id },

@@ -22,12 +22,25 @@ class validate {
         userName: joi.string().alphanum().min(3).max(30).required(),
         fullName: joi.string().required(),
         password: joi.string().required(),
+        birthday: joi.date(),
+        gender: joi.string(),
+        bio: joi.string(),
+        name: joi.string(),
+        website: joi.string(),
+        profile: joi.string(),
+        isPrivate: joi.boolean().default(true),
+        isMentionable: joi.boolean().default(false),
+        bussinessAccount: joi.boolean().default(false),
+        threadingEnabled: joi.boolean().default(false),
       })
       .or("email", "mobileNumber");
+
     const { error } = validation.validate(req.body, { abortEarly: false });
+
     if (error) {
       return validateResponse({ res, error });
     }
+
     next();
   };
 
@@ -188,16 +201,26 @@ class validate {
   /**update user */
   static updateUser = async (req, res, next) => {
     const validation = joi.object().keys({
-      email: joi.string().email(),
+      email: joi.string().email().optional(),
       mobileNumber: joi
         .string()
         .regex(/^[0-9]{10}$/)
         .messages({
           "string.pattern.base": `Phone number must have 10 digits.`,
-        }),
-      userName: joi.string().alphanum().min(3).max(30),
-      fullName: joi.string(),
-      password: joi.string(),
+        })
+        .optional(),
+      userName: joi.string().alphanum().min(3).max(30).required(),
+      fullName: joi.string().required(),
+      birthday: joi.date(),
+      gender: joi.string(),
+      bio: joi.string(),
+      name: joi.string(),
+      website: joi.string(),
+      profile: joi.string(),
+      isPrivate: joi.boolean().default(true),
+      isMentionable: joi.boolean().default(false),
+      bussinessAccount: joi.boolean().default(false),
+      threadingEnabled: joi.boolean().default(false),
     });
 
     const { error } = validation.validate(req.body, { abortEarly: false });

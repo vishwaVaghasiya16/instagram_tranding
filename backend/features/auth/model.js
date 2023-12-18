@@ -1,4 +1,4 @@
-import { userRoleEnum } from "../../config/enum.js";
+import { genderEnum, statusEnum, userRoleEnum } from "../../config/enum.js";
 import mongoose from "mongoose";
 
 const authSchema = new mongoose.Schema(
@@ -39,6 +39,51 @@ const authSchema = new mongoose.Schema(
     following: {
       type: Array,
       default: [],
+    },
+    request: {
+      type: Array,
+      default: [],
+    },
+    status: {
+      type: String,
+      enum: Object.values(statusEnum),
+      default: statusEnum.OFFLINE,
+    },
+    isPrivate: {
+      type: Boolean,
+      default: true,
+    },
+    bio: {
+      type: String,
+    },
+    name: {
+      type: String,
+    },
+    website: {
+      type: String,
+    },
+    profile: {
+      type: String,
+    },
+    threadingEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    isMentionable: {
+      type: Boolean,
+      default: false,
+    },
+    bussinessAccount: {
+      type: Boolean,
+      default: false,
+    },
+    birthday: {
+      type: Date,
+    },
+    gender: {
+      type: String,
+      enum: Object.values(genderEnum),
+      default: genderEnum.CUSTOM,
     },
   },
   {

@@ -8,7 +8,7 @@ export const successResponse = ({
   message,
   success = true,
 }) => {
-  return res.status(statusCode).json({ data, message, success });
+  return res.status(statusCode).json({message,success,data});
 };
 
 /**error response */
@@ -42,16 +42,16 @@ export const errorResponse = async ({
     message = "Token not yet valid";
     statusCode = 401;
   }
-  return res.status(statusCode).json({ success, message });
+  return res.status(statusCode).json({success,message});
 };
 
 /**validate response */
-export const validateResponse = ({ res, error, statusCode = 400 }) => {
-  let arrOjb = { message: "error", success: false };
+export const validateResponse = ({res,error,statusCode = 400}) => {
+  let arrOjb = {message: "error",success: false};
 
-  error.details.map((item, key) => {
-    const { path, message } = item;
-    arrOjb = { ...arrOjb, [path]: message.replace(/['"]/g, "") };
+  error.details.map((item,key) => {
+    const {path,message} = item;
+    arrOjb = {...arrOjb,[ path ]: message.replace(/['"]/g,"")};
   });
 
   return res.status(statusCode).json(arrOjb);
