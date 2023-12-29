@@ -3,10 +3,22 @@ import { notificationEnum } from "../../config/enum.js";
 
 const notificationSchema = new mongoose.Schema(
   {
+    sender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+    },
+    receiver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
       require: true,
+    },
+    post: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "post",
     },
     message: {
       type: mongoose.Schema.Types.ObjectId,

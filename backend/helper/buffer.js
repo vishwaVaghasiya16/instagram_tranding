@@ -12,7 +12,7 @@ export const handleFile = async ({ file, folderName }) => {
     fs.mkdirSync(dirName, { recursive: true });
   }
   const filePath = path.join(dirName, fileName);
-  fs.writeFileSync(filePath, buffer);
+  fs.writeFileSync(filePath, buffer); 
   return `${SERVER_URL}${folderName}/${fileName}`;
 };
 
